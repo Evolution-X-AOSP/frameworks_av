@@ -2190,6 +2190,10 @@ void EffectChain::clearInputBuffer()
 {
     audio_utils::lock_guard _l(mutex());
     clearInputBuffer_l();
+
+    for (size_t i = 0; i < mEffects.size(); i++) {
+        mEffects[i]->reset_l();
+    }
 }
 
 // Must be called with EffectChain::mutex() locked

@@ -246,24 +246,8 @@ public:
         if (source == nullptr) {
             return NO_INIT;
         }
-
-        size_t numSlots = 16;
-        // WORKAROUND: having more slots improve performance while consuming
-        // more memory. This is a temporary workaround to reduce memory for
-        // larger-than-4K scenario.
-        if (mWidth * mHeight > 4096 * 2340) {
-            constexpr OMX_U32 kPortIndexInput = 0;
-
-            OMX_PARAM_PORTDEFINITIONTYPE param;
-            param.nPortIndex = kPortIndexInput;
-            status_t err = mNode->getParameter(OMX_IndexParamPortDefinition,
-                                               &param, sizeof(param));
-            if (err == OK) {
-                numSlots = param.nBufferCountActual;
-            }
-        }
-
-        for (size_t i = 0; i < numSlots; ++i) {
+        constexpr size_t kNumSlots = 16;
+        for (size_t i = 0; i < kNumSlots; ++i) {
             source->onInputBufferAdded(i);
         }
 
@@ -1810,6 +1794,7 @@ void CCodec::onMessageReceived(const sp<AMessage> &msg) {
             // handle configuration changes in work done
             Mutexed<std::unique_ptr<Config>>::Locked configLocked(mConfig);
             const std::unique_ptr<Config> &config = *configLocked;
+            bool changed = false;
             Config::Watcher<C2StreamInitDataInfo::output> initData =
                 config->watch<C2StreamInitDataInfo::output>();
             if (!work->worklets.empty()
@@ -1841,7 +1826,9 @@ void CCodec::onMessageReceived(const sp<AMessage> &msg) {
                     ++stream;
                 }
 
-                config->updateConfiguration(updates, config->mOutputDomain);
+                if (config->updateConfiguration(updates, config->mOutputDomain)) {
+                    changed = true;
+                }
 
                 // copy standard infos to graphic buffers if not already present (otherwise, we
                 // may overwrite the actual intermediate value with a final value)
@@ -1875,7 +1862,7 @@ void CCodec::onMessageReceived(const sp<AMessage> &msg) {
                 config->mInputSurface->onInputBufferDone(work->input.ordinal.frameIndex);
             }
             mChannel->onWorkDone(
-                    std::move(work), config->mOutputFormat,
+                    std::move(work), changed ? config->mOutputFormat->dup() : nullptr,
                     initData.hasChanged() ? initData.update().get() : nullptr);
             break;
         }

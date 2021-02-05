@@ -125,7 +125,6 @@ StagefrightRecorder::StagefrightRecorder(const String16 &opPackageName)
 
     ALOGV("Constructor");
 
-    mMetricsItem = NULL;
     mAnalyticsDirty = false;
     reset();
 }
@@ -200,12 +199,10 @@ void StagefrightRecorder::updateMetrics() {
 void StagefrightRecorder::flushAndResetMetrics(bool reinitialize) {
     ALOGV("flushAndResetMetrics");
     // flush anything we have, maybe setup a new record
-    if (mMetricsItem != NULL) {
-        if (mAnalyticsDirty) {
-            updateMetrics();
-            if (mMetricsItem->count() > 0) {
-                mMetricsItem->selfrecord();
-            }
+    if (mAnalyticsDirty && mMetricsItem != NULL) {
+        updateMetrics();
+        if (mMetricsItem->count() > 0) {
+            mMetricsItem->selfrecord();
         }
         delete mMetricsItem;
         mMetricsItem = NULL;

@@ -33,8 +33,8 @@ class MemoryDealer;
 class SkipCutBuffer;
 
 constexpr size_t kLinearBufferSize = 1048576;
-// This can fit an 8K frame.
-constexpr size_t kMaxLinearBufferSize = 7680 * 4320 * 2;
+// This can fit 4K RGBA frame, and most likely client won't need more than this.
+constexpr size_t kMaxLinearBufferSize = 4096 * 2304 * 4;
 
 /**
  * Base class for representation of buffers at one port.
@@ -215,8 +215,10 @@ public:
 
     /**
      * Update SkipCutBuffer from format. The @p format must not be null.
+     * @p notify determines whether the format comes with a buffer that should
+     * be reported to the client or not.
      */
-    void updateSkipCutBuffer(const sp<AMessage> &format);
+    void updateSkipCutBuffer(const sp<AMessage> &format, bool notify = true);
 
     /**
      * Output Stash
@@ -389,6 +391,9 @@ private:
     void setSkipCutBuffer(int32_t skip, int32_t cut);
 
     // Output stash
+
+    // Output format that has not been made available to the client.
+    sp<AMessage> mUnreportedFormat;
 
     // Struct for an entry in the output stash (mPending and mReorderStash)
     struct StashEntry {

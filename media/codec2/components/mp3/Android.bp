@@ -1,4 +1,4 @@
-cc_library {
+cc_library_shared {
     name: "libcodec2_soft_mp3dec",
     defaults: [
         "libcodec2_soft-defaults",

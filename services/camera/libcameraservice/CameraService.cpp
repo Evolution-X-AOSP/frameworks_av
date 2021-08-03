@@ -823,11 +823,9 @@ bool CameraService::hasPermissionsForSystemCamera(const std::string& cameraId, i
     AttributionSourceState attributionSource{};
     attributionSource.pid = callingPid;
     attributionSource.uid = callingUid;
-    bool checkPermissionForSystemCamera = checkPermission(cameraId,
-            sSystemCameraPermission, attributionSource, std::string(), AppOpsManager::OP_NONE);
     bool checkPermissionForCamera = checkPermission(cameraId,
             sCameraPermission, attributionSource, std::string(), AppOpsManager::OP_NONE);
-    return checkPermissionForSystemCamera && checkPermissionForCamera;
+    return checkPermissionForCamera;
 }
 
 bool CameraService::hasPermissionsForCameraHeadlessSystemUser(const std::string& cameraId,

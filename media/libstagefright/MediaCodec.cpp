@@ -280,6 +280,22 @@ void MediaCodec::ResourceManagerServiceProxy::removeCookie(void* cookie) {
 }
 
 //static
+Mutex MediaCodec::ResourceManagerServiceProxy::sLockCookies;
+std::set<void*> MediaCodec::ResourceManagerServiceProxy::sCookies;
+
+//static
+void MediaCodec::ResourceManagerServiceProxy::addCookie(void* cookie) {
+    Mutex::Autolock _l(sLockCookies);
+    sCookies.insert(cookie);
+}
+
+//static
+void MediaCodec::ResourceManagerServiceProxy::removeCookie(void* cookie) {
+    Mutex::Autolock _l(sLockCookies);
+    sCookies.erase(cookie);
+}
+
+//static
 void MediaCodec::ResourceManagerServiceProxy::BinderDiedCallback(void* cookie) {
     Mutex::Autolock _l(sLockCookies);
     if (sCookies.find(cookie) != sCookies.end()) {

@@ -330,6 +330,7 @@ cc_library {
         "SimpleDecodingSource.cpp",
         "StagefrightMediaScanner.cpp",
         "SurfaceUtils.cpp",
+        "TableXInit.cpp" ,
         "ThrottledSource.cpp",
         "Utils.cpp",
         "VideoFrameSchedulerBase.cpp",

@@ -169,6 +169,13 @@ CCodecBufferChannel::CCodecBufferChannel(
       mInputMetEos(false),
       mLastInputBufferAvailableTs(0u),
       mSendEncryptedInfoBuffer(false) {
+    char board_platform[PROPERTY_VALUE_MAX];
+    property_get("ro.board.platform", board_platform, "");
+    mNeedEmptyWork = false;
+    if (!strncmp(board_platform, "lahaina", 7)) {
+        mNeedEmptyWork = true;
+        ALOGV("CCodecBufferChannel: going to queue empty work for lahaina.");
+    }
     {
         Mutexed<Input>::Locked input(mInput);
         input->buffers.reset(new DummyInputBuffers(""));
@@ -751,15 +758,17 @@ void CCodecBufferChannel::feedInputBufferIfAvailable() {
     // limit this WA to qc hw decoder only
     // if feedInputBufferIfAvailableInternal() successfully (has available input buffer),
     // mLastInputBufferAvailableTs would be updated. otherwise, not input buffer available
-    std::regex pattern{"c2\\.qti\\..*\\.decoder.*"};
-    if (std::regex_match(mComponentName, pattern)) {
-        std::lock_guard<std::mutex> tsLock(mTsLock);
-        uint64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
-                PipelineWatcher::Clock::now().time_since_epoch()).count();
-        if (now - mLastInputBufferAvailableTs > kPipelinePausedTimeoutMs) {
-            ALOGV("long time elapsed since last input available, let's queue a specific work to "
-                    "HAL to notify something");
-            queueDummyWork();
+    if (mNeedEmptyWork) {
+        std::regex pattern{"c2\\.qti\\..*\\.decoder.*"};
+        if (std::regex_match(mComponentName, pattern)) {
+            std::lock_guard<std::mutex> tsLock(mTsLock);
+            uint64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    PipelineWatcher::Clock::now().time_since_epoch()).count();
+            if (now - mLastInputBufferAvailableTs > kPipelinePausedTimeoutMs) {
+                ALOGV("long time elapsed since last input available, let's queue a specific work to "
+                        "HAL to notify something");
+                queueDummyWork();
+            }
         }
     }
 }
@@ -1756,7 +1765,7 @@ status_t CCodecBufferChannel::requestInitialInputBuffers(
         clientInputBuffers.erase(minIndex);
     }
 
-    if (!clientInputBuffers.empty()) {
+    if (mNeedEmptyWork && !clientInputBuffers.empty()) {
         {
             std::lock_guard<std::mutex> tsLock(mTsLock);
             mLastInputBufferAvailableTs = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1932,7 +1941,7 @@ bool CCodecBufferChannel::handleWork(
 
     if (work->result == C2_OK){
         notifyClient = true;
-    } else if (work->result == C2_OMITTED) {
+    } else if (mNeedEmptyWork && work->result == C2_OMITTED) {
         ALOGV("[%s] empty work returned; omitted.", mName);
         return false; // omitted
     } else if (work->result == C2_NOT_FOUND) {

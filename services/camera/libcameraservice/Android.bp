@@ -40,6 +40,8 @@ cc_library_shared {
     defaults: [
         "camera_needs_client_info_lib_defaults",
         "no_cameraserver_defaults",
+        "uses_oplus_camera_defaults",
+        "uses_nothing_camera_defaults",
     ],
 
     // Camera service source

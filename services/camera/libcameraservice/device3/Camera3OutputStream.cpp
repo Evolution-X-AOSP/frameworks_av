@@ -859,7 +859,18 @@ status_t Camera3OutputStream::getBufferLockedCommon(ANativeWindowBuffer** anb, i
         size_t batchSize = mBatchSize.load();
         if (batchSize == 1) {
             sp<ANativeWindow> anw = consumer;
-            res = anw->dequeueBuffer(anw.get(), anb, fenceFd);
+#define MAX_WAIT_US 5000000 //5s
+            uint32_t totalWaitUs = 0;
+            uint32_t waitItvlUs = 10000; // 10ms
+            do {
+                res = anw->dequeueBuffer(anw.get(), anb, fenceFd);
+                if (res) {
+                    usleep(waitItvlUs);
+                    totalWaitUs += waitItvlUs;
+                }
+            } while ((res == INVALID_OPERATION) && (totalWaitUs < MAX_WAIT_US));
+
+            ALOGV("%s: anw->dequeueBuffer res %d, totalWaitUs %u", __func__, res, totalWaitUs);
         } else {
             std::unique_lock<std::mutex> batchLock(mBatchLock);
             res = OK;

@@ -3359,6 +3359,10 @@ status_t ACodec::setupRawAudioFormat(
             pcmParams.eNumData = OMX_NumericalDataSigned;
             pcmParams.nBitPerSample = 24;
             break;
+        case kAudioEncodingPcm32bit:
+            pcmParams.eNumData = OMX_NumericalDataSigned;
+            pcmParams.nBitPerSample = 32;
+            break;
         default:
             return BAD_VALUE;
     }
@@ -5472,6 +5476,9 @@ status_t ACodec::getPortFormat(OMX_U32 portIndex, sp<AMessage> &notify) {
                     } else if (params.eNumData == OMX_NumericalDataSigned
                             && params.nBitPerSample == 24u) {
                         encoding = kAudioEncodingPcm24bitPacked;
+                    } else if (params.eNumData == OMX_NumericalDataSigned
+                            && params.nBitPerSample == 32u) {
+                        encoding = kAudioEncodingPcm32bit;
                     } else if (params.nBitPerSample != 16u
                             || params.eNumData != OMX_NumericalDataSigned) {
                         ALOGE("unsupported PCM port: %s(%d), %s(%d) mode ",

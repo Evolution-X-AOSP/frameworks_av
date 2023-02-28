@@ -46,6 +46,7 @@ using android::content::AttributionSourceState;
 using aidl_utils::statusTFromBinderStatus;
 
 // ---------------------------------------------------------------------------
+static Mutex gRestoreLock;
 
 // static
 status_t AudioRecord::getMinFrameCount(
@@ -1512,6 +1513,7 @@ nsecs_t AudioRecord::processAudioBuffer()
 
 status_t AudioRecord::restoreRecord_l(const char *from)
 {
+    Mutex::Autolock _l(gRestoreLock);
     status_t result = NO_ERROR;  // logged: make sure to set this before returning.
     const int64_t beginNs = systemTime();
     mediametrics::Defer defer([&] {

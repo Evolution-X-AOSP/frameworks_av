@@ -213,11 +213,10 @@ extern "C" int EffectCreate(const effect_uuid_t* uuid, int32_t sessionId,
     pContext = new EffectContext;
 
     // If this is the first create in this session
-    if (GlobalSessionMemory[sessionNo].bBundledEffectsEnabled == LVM_FALSE) {
+    if (GlobalSessionMemory[sessionNo].nBundledEffectsEnableCount == 0) {
         ALOGV("\tEffectCreate - This is the first effect in current sessionId %d sessionNo %d",
               sessionId, sessionNo);
 
-        GlobalSessionMemory[sessionNo].bBundledEffectsEnabled = LVM_TRUE;
         GlobalSessionMemory[sessionNo].pBundledContext = new BundledEffectContext;
         newBundle = true;
 
@@ -318,7 +317,6 @@ exit:
     if (ret != 0) {
         if (pContext != NULL) {
             if (newBundle) {
-                GlobalSessionMemory[sessionNo].bBundledEffectsEnabled = LVM_FALSE;
                 SessionIndex[sessionNo] = LVM_UNUSED_SESSION;
                 delete pContext->pBundledContext;
             }
@@ -327,6 +325,7 @@ exit:
         if (pHandle != NULL) *pHandle = (effect_handle_t)NULL;
     } else {
         if (pHandle != NULL) *pHandle = (effect_handle_t)pContext;
+        GlobalSessionMemory[sessionNo].nBundledEffectsEnableCount += 1;
     }
     ALOGV("\tEffectCreate end..\n\n");
     return ret;
@@ -392,6 +391,9 @@ extern "C" int EffectRelease(effect_handle_t handle) {
         (pSessionContext->bVolumeInstantiated == LVM_FALSE) &&
         (pSessionContext->bEqualizerInstantiated == LVM_FALSE) &&
         (pSessionContext->bVirtualizerInstantiated == LVM_FALSE)) {
+            pSessionContext->nBundledEffectsEnableCount -= 1;
+    }
+    if (pSessionContext->nBundledEffectsEnableCount <= 0) {
         // Clear the SessionIndex
         for (int i = 0; i < LVM_MAX_SESSIONS; i++) {
             if (SessionIndex[i] == pContext->pBundledContext->SessionId) {
@@ -403,7 +405,6 @@ extern "C" int EffectRelease(effect_handle_t handle) {
         }
 
         ALOGV("\tEffectRelease: All effects are no longer instantiated\n");
-        pSessionContext->bBundledEffectsEnabled = LVM_FALSE;
         pSessionContext->pBundledContext = LVM_NULL;
         ALOGV("\tEffectRelease: Freeing LVM Bundle memory\n");
         LVM_DelInstanceHandle(&pContext->pBundledContext->hInstance);
@@ -452,7 +453,7 @@ extern "C" int EffectGetDescriptor(const effect_uuid_t* uuid, effect_descriptor_
 void LvmGlobalBundle_init() {
     ALOGV("\tLvmGlobalBundle_init start");
     for (int i = 0; i < LVM_MAX_SESSIONS; i++) {
-        GlobalSessionMemory[i].bBundledEffectsEnabled = LVM_FALSE;
+        GlobalSessionMemory[i].nBundledEffectsEnableCount = 0;
         GlobalSessionMemory[i].bVolumeInstantiated = LVM_FALSE;
         GlobalSessionMemory[i].bEqualizerInstantiated = LVM_FALSE;
         GlobalSessionMemory[i].bBassInstantiated = LVM_FALSE;

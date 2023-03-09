@@ -101,7 +101,7 @@ struct BundledEffectContext {
 
 /* SessionContext : One session */
 struct SessionContext {
-    bool bBundledEffectsEnabled;
+    int nBundledEffectsEnableCount;
     bool bVolumeInstantiated;
     bool bEqualizerInstantiated;
     bool bBassInstantiated;

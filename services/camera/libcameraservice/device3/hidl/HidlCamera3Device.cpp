@@ -187,7 +187,7 @@ status_t HidlCamera3Device::initialize(sp<CameraProviderManager> manager,
                 physicalId = "20";
                 CLOGW("Trying physical camera %s if available", physicalId.c_str());
                 res = manager->getCameraCharacteristics(
-                        physicalId, false, &mPhysicalDeviceInfoMap[physicalId]);
+                        physicalId, false, &mPhysicalDeviceInfoMap[physicalId], true);
                 if (res != OK) {
                     SET_ERR_L("Could not retrieve camera %s characteristics: %s (%d)",
                             physicalId.c_str(), strerror(-res), res);

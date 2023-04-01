@@ -218,6 +218,8 @@ void AudioMixerBase::disable(int name)
         track->enabled = false;
         ALOGV("disable(%d)", name);
         invalidate();
+        track->mPrevVolume[0] = 0.f;
+        track->mPrevVolume[1] = 0.f;
     }
 }
 

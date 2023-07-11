@@ -20,6 +20,7 @@
 #endif
 
 #include <math.h>
+#include <sys/types.h>
 
 // Checks and monitors OP_PLAY_AUDIO
 class OpPlayAudioMonitor : public RefBase {

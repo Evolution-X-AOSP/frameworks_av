@@ -594,11 +594,13 @@ void AudioFlinger::PlaybackThread::OpPlayAudioMonitor::checkPlayAudioForUsage(bo
     bool shouldChange = !hasAppOps;  // check if we need to update.
     if (mHasOpPlayAudio.compare_exchange_strong(shouldChange, hasAppOps)) {
         ALOGD("OpPlayAudio: track:%d usage:%d %smuted", mId, mUsage, hasAppOps ? "not " : "");
-        auto thread = mThread.promote();
-        if (thread != nullptr && thread->type() == AudioFlinger::ThreadBase::OFFLOAD) {
-            // Wake up Thread if offloaded, otherwise it may be several seconds for update.
-            Mutex::Autolock _l(thread->mLock);
-            thread->broadcast_l();
+        if (doBroadcast) {
+            auto thread = mThread.promote();
+            if (thread != nullptr && thread->type() == AudioFlinger::ThreadBase::OFFLOAD) {
+                // Wake up Thread if offloaded, otherwise it may be several seconds for update.
+                Mutex::Autolock _l(thread->mLock);
+                thread->broadcast_l();
+            }
         }
     }
 }

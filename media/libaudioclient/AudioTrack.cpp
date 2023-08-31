@@ -1705,11 +1705,11 @@ audio_io_handle_t AudioTrack::getOutput() const
 
 status_t AudioTrack::setOutputDevice(audio_port_handle_t deviceId) {
     AutoMutex lock(mLock);
-    ALOGV("%s(%d): deviceId=%d mSelectedDeviceId=%d mRoutedDeviceId %d",
-            __func__, mPortId, deviceId, mSelectedDeviceId, mRoutedDeviceId);
+    ALOGV("%s(%d): deviceId=%d mSelectedDeviceId=%d",
+            __func__, mPortId, deviceId, mSelectedDeviceId);
     if (mSelectedDeviceId != deviceId) {
         mSelectedDeviceId = deviceId;
-        if (mStatus == NO_ERROR && mSelectedDeviceId != mRoutedDeviceId) {
+        if (mStatus == NO_ERROR) {
             if (isPlaying_l()) {
                 android_atomic_or(CBLK_INVALID, &mCblk->mFlags);
                 mProxy->interrupt();
@@ -2857,9 +2857,13 @@ status_t AudioTrack::restoreTrack_l(const char *from)
     // output parameters and new IAudioFlinger in createTrack_l()
     AudioSystem::clearAudioConfigCache();
 
-    if (isOffloadedOrDirect_l() || mDoNotReconnect) {
-        // FIXME re-creation of offloaded and direct tracks is not yet implemented;
-        // reconsider enabling for linear PCM encodings when position can be preserved.
+    if (mDoNotReconnect) {
+        result = DEAD_OBJECT;
+        return result;
+    }
+
+    // For the offload case, only re-create track when device is requested by the application.
+    if (isOffloaded_l() && !mSelectedDeviceUpdate) {
         result = DEAD_OBJECT;
         return result;
     }
@@ -2899,6 +2903,7 @@ retry:
     result = createTrack_l();
 
     if (result == NO_ERROR) {
+        mSelectedDeviceUpdate = false;
         // take the frames that will be lost by track recreation into account in saved position
         // For streaming tracks, this is the amount we obtained from the user/client
         // (not the number actually consumed at the server - those are already lost).

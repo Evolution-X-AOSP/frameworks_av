@@ -29,6 +29,9 @@
 #define CLOGE(fmt, ...) ALOGE("Camera %s: %s: " fmt, mId.c_str(), __FUNCTION__, \
             ##__VA_ARGS__)
 
+#define CLOGW(fmt, ...) ALOGW("Camera %s: %s: " fmt, mId.c_str(), __FUNCTION__, \
+ ##__VA_ARGS__)
+
 // Convenience macros for transitioning to the error state
 #define SET_ERR(fmt, ...) setErrorState(   \
     "%s: " fmt, __FUNCTION__,              \
@@ -47,6 +50,7 @@
 #include <utils/Timers.h>
 #include <cutils/properties.h>
 #include <camera/StringUtils.h>
+#include <android-base/properties.h>
 
 #include <android/hardware/camera/device/3.7/ICameraInjectionSession.h>
 #include <android/hardware/camera2/ICameraDeviceUser.h>
@@ -181,10 +185,22 @@ status_t HidlCamera3Device::initialize(sp<CameraProviderManager> manager,
                     physicalId, /*overrideForPerfClass*/false, &mPhysicalDeviceInfoMap[physicalId],
                     /*overrideToPortrait*/false);
             if (res != OK) {
-                SET_ERR_L("Could not retrieve camera %s characteristics: %s (%d)",
-                        physicalId.c_str(), strerror(-res), res);
-                session->close();
-                return res;
+                auto fallbackId = base::GetProperty(
+                        "persist.sys.camera.fallback_id_" + physicalId, "");
+                if (!fallbackId.empty()) {
+                    CLOGW("Could not retrieve camera %s characteristics: %s (%d)",
+                            physicalId.c_str(), strerror(-res), res);
+                    CLOGW("Trying fallback camera %s", fallbackId.c_str());
+                    res = manager->getCameraCharacteristics(
+                            fallbackId, /*overrideForPerfClass*/false,
+                            &mPhysicalDeviceInfoMap[fallbackId], /*overrideToPortrait*/true);
+                }
+                if (res != OK) {
+                    SET_ERR_L("Could not retrieve camera %s characteristics: %s (%d)",
+                            physicalId.c_str(), strerror(-res), res);
+                    session->close();
+                    return res;
+                }
             }
 
             bool usePrecorrectArray =

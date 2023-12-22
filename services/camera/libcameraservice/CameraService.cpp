@@ -1923,9 +1923,13 @@ void CameraService::finishConnectLocked(const sp<BasicClient>& client,
                     oomScoreOffset, systemNativeClient);
     auto evicted = mActiveClientManager.addAndEvict(clientDescriptor);
 
-    if (strcmp(String8(client->getPackageName()).string(), "com.android.camera") == 0) {
+    const char* packageName = toString8(client->getPackageName()).c_str();
+
+    if (strcmp(packageName, "com.android.camera") == 0
+        || strcmp(packageName, "com.google.android.GoogleCamera") == 0) {
         evicted.clear();
     }
+
 
     logConnected(desc->getKey(), static_cast<int>(desc->getOwnerId()),
             client->getPackageName());
@@ -2050,9 +2054,13 @@ status_t CameraService::handleEvictionsLocked(const std::string& cameraId, int c
         // Find clients that would be evicted
         auto evicted = mActiveClientManager.wouldEvict(clientDescriptor);
 
-        if (strcmp(String8(packageName).string(), "com.android.camera") == 0) {
+        const char* packageNameStr = toString8(packageName).c_str();
+
+        if (strcmp(packageNameStr, "com.android.camera") == 0
+            || strcmp(packageNameStr, "com.google.android.GoogleCamera") == 0) {
             evicted.clear();
         }
+
         // If the incoming client was 'evicted,' higher priority clients have the camera in the
         // background, so we cannot do evictions
         if (std::find(evicted.begin(), evicted.end(), clientDescriptor) != evicted.end()) {

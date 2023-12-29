@@ -172,9 +172,9 @@ CCodecBufferChannel::CCodecBufferChannel(
     char board_platform[PROPERTY_VALUE_MAX];
     property_get("ro.board.platform", board_platform, "");
     mNeedEmptyWork = false;
-    if (!strncmp(board_platform, "lahaina", 7)) {
+    if (!strncmp(board_platform, "lahaina", 7) || !strncmp(board_platform, "taro", 4)) {
         mNeedEmptyWork = true;
-        ALOGV("CCodecBufferChannel: going to queue empty work for lahaina.");
+        ALOGV("CCodecBufferChannel: going to queue empty work.");
     }
     {
         Mutexed<Input>::Locked input(mInput);

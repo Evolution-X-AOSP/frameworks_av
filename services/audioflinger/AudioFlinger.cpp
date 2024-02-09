@@ -4866,7 +4866,7 @@ status_t AudioFlinger::onTransactWrapper(TransactionCode code,
         case TransactionCode::GET_AUDIO_POLICY_CONFIG:
         case TransactionCode::GET_AUDIO_MIX_PORT:
             ALOGW("%s: transaction %d received from PID %d",
-                  __func__, code, IPCThreadState::self()->getCallingPid());
+                  __func__, static_cast<int>(code), IPCThreadState::self()->getCallingPid());
             // return status only for non void methods
             switch (code) {
                 case TransactionCode::SET_RECORD_SILENCED:
@@ -4901,7 +4901,8 @@ status_t AudioFlinger::onTransactWrapper(TransactionCode code,
         case TransactionCode::SET_APP_MUTE: {
             if (!isServiceUid(IPCThreadState::self()->getCallingUid())) {
                 ALOGW("%s: transaction %d received from PID %d unauthorized UID %d",
-                      __func__, code, IPCThreadState::self()->getCallingPid(),
+                      __func__, static_cast<int>(code),
+                      IPCThreadState::self()->getCallingPid(),
                       IPCThreadState::self()->getCallingUid());
                 // return status only for non-void methods
                 switch (code) {
